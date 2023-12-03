@@ -6,6 +6,7 @@ import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -58,25 +59,35 @@ public class SelectionSortVenue {
     }
 
     /**
-     * Cria o caso de cenário melhor ordenando os dados com o algoritmo Selection Sort e escreve os resultados no arquivo
+     * Cria o caso de cenário melhor ordenando os dados com Collections.sort e escreve os resultados no arquivo
      * de saída correspondente.
      */
     private void criarCasoMelhor() {
         List<String[]> data = carregarArquivoEmLista(inputFile);
-        selectionSort(data, venueIndex);
+        Collections.sort(data, new Comparator<String[]>() {
+            @Override
+            public int compare(String[] o1, String[] o2) {
+                return compareStrings(o1[venueIndex], o2[venueIndex]);
+            }
+        });
         escreverDados(data, outputMelhor);
     }
 
     /**
-     * Cria o caso de cenário pior ordenando os dados com o algoritmo Selection Sort em ordem decrescente e escreve os
+     * Cria o caso de cenário pior ordenando os dados com Collections.sort em ordem decrescente e escreve os
      * resultados no arquivo de saída correspondente.
      */
     private void criarCasoPior() {
         List<String[]> data = carregarArquivoEmLista(inputFile);
-        selectionSort(data, venueIndex);
-        Collections.reverse(data);
+        Collections.sort(data, new Comparator<String[]>() {
+            @Override
+            public int compare(String[] o1, String[] o2) {
+                return compareStrings(o2[venueIndex], o1[venueIndex]); // Ordem decrescente
+            }
+        });
         escreverDados(data, outputPior);
     }
+
 
     /**
      * Copia um arquivo de origem para um arquivo de destino.
