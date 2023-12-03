@@ -4,7 +4,7 @@
 - Deyvid Jerônimo de Araújo Macêdo
 - Kaio Emanuel Rosemiro de Carvalho
 
-Este repositório é uma extensão do projeto [LEDA_Project1](https://github.com/zKerc/LEDA_Project1/tree/main). A principal modificação nesta extensão é a substituição dos arrays nativos do Java por três estruturas de dados de nossa escolha, aprimorando o projeto anterior com novas abordagens e técnicas de estrutura de dados.
+Este projeto é uma extensão do projeto [LEDA_Project1](https://github.com/zKerc/LEDA_Project1/tree/main). A principal modificação nesta extensão é a substituição dos arrays nativos do Java por três estruturas de dados de nossa escolha, aprimorando o projeto anterior com novas abordagens e técnicas de estrutura de dados.
 
 ## Orientações sobre a execução:
 
