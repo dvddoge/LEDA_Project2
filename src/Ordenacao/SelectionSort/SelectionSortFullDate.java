@@ -7,7 +7,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
@@ -73,8 +76,10 @@ public class SelectionSortFullDate {
      */
     private void criarCasoMelhor() {
         String[][] data = carregarArquivoEmArray(inputFile);
-        selectionSort(data, fullDateIndex);
-        escreverDados(data, outputMelhor);
+        List<String[]> dataList = new ArrayList<>(List.of(data));
+
+        selectionSort(dataList, fullDateIndex);
+        escreverDados(dataList, outputMelhor);
     }
 
     /**
@@ -83,9 +88,11 @@ public class SelectionSortFullDate {
      */
     private void criarCasoPior() {
         String[][] data = carregarArquivoEmArray(inputFile);
-        selectionSort(data, fullDateIndex);
-        inverterDados(data);
-        escreverDados(data, outputPior);
+        List<String[]> dataList = new ArrayList<>(List.of(data));
+
+        selectionSort(dataList, fullDateIndex);
+        inverterDados(dataList);
+        escreverDados(dataList, outputPior);
     }
 
     /**
@@ -131,7 +138,7 @@ public class SelectionSortFullDate {
      * @param data       A matriz bidimensional de dados a ser escrita.
      * @param outputFile O caminho do arquivo CSV de saída.
      */
-    private void escreverDados(String[][] data, String outputFile) {
+    private void escreverDados(List<String[]> data, String outputFile) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
             // Escreva o cabeçalho
             writer.write(
@@ -139,8 +146,8 @@ public class SelectionSortFullDate {
             writer.newLine();
 
             // Escreva os dados
-            for (int i = 0; i < data.length; i++) {
-                writer.write(String.join(",", data[i]));
+            for (String[] row : data) {
+                writer.write(String.join(",", row));
                 writer.newLine();
             }
         } catch (IOException e) {
@@ -153,12 +160,8 @@ public class SelectionSortFullDate {
      *
      * @param data A matriz bidimensional de dados a ser invertida.
      */
-    private void inverterDados(String[][] data) {
-        for (int i = 0; i < data.length / 2; i++) {
-            String[] temp = data[i];
-            data[i] = data[data.length - i - 1];
-            data[data.length - i - 1] = temp;
-        }
+    private void inverterDados(List<String[]> data) {
+        Collections.reverse(data);
     }
 
     /**
@@ -167,16 +170,36 @@ public class SelectionSortFullDate {
      * @param fileToOrder O caminho do arquivo contendo os dados a serem ordenados.
      */
     private void ordenarEImprimirTempo(String fileToOrder) {
-        String[][] data = carregarArquivoEmArray(fileToOrder);
-
+        List<String[]> dataList = carregarArquivoEmLista(fileToOrder);
+    
         long startTime = System.currentTimeMillis();
-        selectionSort(data, fullDateIndex);
+        selectionSort(dataList, fullDateIndex);
         long endTime = System.currentTimeMillis();
-
+    
         System.out.println("Tempo de execução para " + fileToOrder + ": " + (endTime - startTime) + " ms");
         imprimirConsumoMemoria(); // Imprimir consumo de memória após a ordenação
-
     }
+    
+    private List<String[]> carregarArquivoEmLista(String fileToOrder) {
+        List<String[]> data = new ArrayList<>();
+    
+        try (BufferedReader br = new BufferedReader(new FileReader(fileToOrder))) {
+            String line;
+            boolean firstLine = true;
+            while ((line = br.readLine()) != null) {
+                if (firstLine) {
+                    firstLine = false;
+                    continue;  // Pular a primeira linha (cabeçalho)
+                }
+                data.add(line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    
+        return data;
+    }
+    
 
     /**
      * Ordena um array bidimensional com base em uma coluna específica usando o
@@ -185,21 +208,19 @@ public class SelectionSortFullDate {
      * @param data        O array bidimensional a ser ordenado.
      * @param columnIndex O índice da coluna pela qual os dados serão ordenados.
      */
-    private void selectionSort(String[][] data, int columnIndex) {
-        int n = data.length;
+    private void selectionSort(List<String[]> data, int columnIndex) {
+        int n = data.size();
 
-        for (int i = 0; i < n-1; i++) {
+        for (int i = 0; i < n - 1; i++) {
             int min_idx = i;
 
-            for (int j = i+1; j < n; j++) {
-                if (isDateGreater(data[min_idx][columnIndex], data[j][columnIndex])) {
+            for (int j = i + 1; j < n; j++) {
+                if (isDateGreater(data.get(min_idx)[columnIndex], data.get(j)[columnIndex])) {
                     min_idx = j;
                 }
             }
 
-            String[] temp = data[min_idx];
-            data[min_idx] = data[i];
-            data[i] = temp;
+            Collections.swap(data, min_idx, i);
         }
     }
 

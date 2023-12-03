@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A classe {@code InsertionSortAttendance} realiza a ordenação de dados em
@@ -67,17 +70,17 @@ public class SelectionSortAttendance {
      */
     private void criarCasoMelhor() {
         try {
-            // Contar linhas do arquivo
             int rowCount = contarLinhas(inputFile);
 
             String[][] data = carregarArquivoEmArray(inputFile, rowCount);
+            List<String[]> dataList = new ArrayList<>(List.of(data));
 
-            selectionSort(data, attendanceIndex, rowCount); // Ordenando o array
+            selectionSort(dataList, attendanceIndex);
 
             // Escrevendo no arquivo de saída
             try (FileWriter writer = new FileWriter(outputMelhor)) {
-                for (int i = 0; i < rowCount; i++) {
-                    writer.write(String.join(",", data[i]) + "\n");
+                for (String[] row : dataList) {
+                    writer.write(String.join(",", row) + "\n");
                 }
             }
         } catch (IOException e) {
@@ -90,42 +93,23 @@ public class SelectionSortAttendance {
      * decrescente.
      */
     private void criarCasoPior() {
-        try (BufferedReader br = new BufferedReader(new FileReader(inputFile));
-                FileWriter writer = new FileWriter(outputPior, false)) {
+        try {
+            int rowCount = contarLinhas(inputFile);
 
-            int rowCount = 0;
-            while (br.readLine() != null)
-                rowCount++;
+            String[][] data = carregarArquivoEmArray(inputFile, rowCount);
+            List<String[]> dataList = new ArrayList<>(List.of(data));
 
-            br.close();
+            selectionSort(dataList, attendanceIndex);
 
-            String[][] data = new String[rowCount][14];
+            // Invertendo a ordem dos dados
+            Collections.reverse(dataList);
 
-            BufferedReader newBr = new BufferedReader(new FileReader(inputFile));
-            int index = 0;
-            String line;
-            while ((line = newBr.readLine()) != null) {
-                data[index++] = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+            // Escrevendo no arquivo de saída
+            try (FileWriter writer = new FileWriter(outputPior)) {
+                for (String[] row : dataList) {
+                    writer.write(String.join(",", row) + "\n");
+                }
             }
-            newBr.close();
-
-            String[] header = data[0]; // Separando o cabeçalho
-            String[][] dataArray = new String[rowCount - 1][14]; // Array para os dados sem cabeçalho
-            System.arraycopy(data, 1, dataArray, 0, rowCount - 1); // Copiando os dados sem o cabeçalho
-
-            selectionSort(dataArray, attendanceIndex, rowCount - 1);
-
-            for (int i = 0; i < dataArray.length / 2; i++) {
-                String[] temp = dataArray[i];
-                dataArray[i] = dataArray[dataArray.length - i - 1];
-                dataArray[dataArray.length - i - 1] = temp;
-            }
-
-            writer.write(String.join(",", header) + "\n"); // Escrevendo o cabeçalho primeiro
-            for (int i = 0; i < rowCount - 1; i++) { // Escrevendo os dados invertidos
-                writer.write(String.join(",", dataArray[i]) + "\n");
-            }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -144,37 +128,6 @@ public class SelectionSortAttendance {
             while ((line = br.readLine()) != null) {
                 writer.write(line + "\n");
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Ordena os dados no arquivo especificado e imprime o tempo de execução.
-     *
-     * @param fileToOrder O arquivo a ser ordenado.
-     */
-    private void ordenarEImprimirTempo(String fileToOrder) {
-        try {
-            // Contar linhas do arquivo
-            int rowCount = contarLinhas(fileToOrder);
-
-            String[][] data = carregarArquivoEmArray(fileToOrder, rowCount);
-
-            String[][] dataArray = new String[rowCount - 1][14]; // Array para os dados sem cabeçalho
-            System.arraycopy(data, 1, dataArray, 0, rowCount - 1); // Copiando os dados sem o cabeçalho
-
-            // Início da medição de tempo
-            long startTime = System.currentTimeMillis();
-
-            selectionSort(dataArray, attendanceIndex, rowCount - 1);
-
-            // Fim da medição de tempo
-            long endTime = System.currentTimeMillis();
-            System.out.println("Tempo de execução para " + fileToOrder + ": " + (endTime - startTime) + " ms");
-            imprimirConsumoMemoria(); // Imprimir consumo de memória após a ordenação
-
-            // NÃO gravaremos os dados ordenados no arquivo para manter os casos como estão
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -225,12 +178,12 @@ public class SelectionSortAttendance {
      * @param columnIndex O índice da coluna pela qual os dados serão ordenados.
      * @param rowCount    O número de linhas no array.
      */
-    private void selectionSort(String[][] data, int columnIndex, int rowCount) {
-        for (int i = 0; i < rowCount - 1; i++) {
+    private void selectionSort(List<String[]> data, int columnIndex) {
+        for (int i = 0; i < data.size() - 1; i++) {
             int min_idx = i;
-            for (int j = i + 1; j < rowCount; j++) {
-                String currentData = data[j][columnIndex].replace("\"", "").replace(",", "");
-                String minData = data[min_idx][columnIndex].replace("\"", "").replace(",", "");
+            for (int j = i + 1; j < data.size(); j++) {
+                String currentData = data.get(j)[columnIndex].replace("\"", "").replace(",", "");
+                String minData = data.get(min_idx)[columnIndex].replace("\"", "").replace(",", "");
 
                 if (!isNumeric(currentData)) {
                     currentData = "0";
@@ -247,9 +200,7 @@ public class SelectionSortAttendance {
                 }
             }
 
-            String[] temp = data[min_idx];
-            data[min_idx] = data[i];
-            data[i] = temp;
+            Collections.swap(data, min_idx, i);
         }
     }
 
@@ -269,6 +220,26 @@ public class SelectionSortAttendance {
         }
     }
 
+    private void ordenarEImprimirTempo(String fileToOrder) {
+        try {
+            int rowCount = contarLinhas(fileToOrder);
+            String[][] data = carregarArquivoEmArray(fileToOrder, rowCount);
+            List<String[]> dataList = new ArrayList<>(List.of(data));
+
+            long startTime = System.currentTimeMillis();
+
+            selectionSort(dataList, attendanceIndex);
+
+            long endTime = System.currentTimeMillis();
+            System.out.println("Tempo de execução para " + fileToOrder + ": " + (endTime - startTime) + " ms");
+            imprimirConsumoMemoria();
+
+            // NÃO gravaremos os dados ordenados no arquivo para manter os casos como estão
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void imprimirConsumoMemoria() {
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heapMemoryUsage = memoryBean.getHeapMemoryUsage();
@@ -278,3 +249,4 @@ public class SelectionSortAttendance {
         System.out.println("Consumo de memória: " + usedMemory + " bytes");
     }
 }
+
