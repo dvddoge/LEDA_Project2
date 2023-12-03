@@ -7,10 +7,13 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * A classe {@code QuickSortMediana3Attendance} realiza a ordenação de dados em arquivos
- * CSV usando o algoritmo de ordenação QuickSort com mediana de três.
+ * A classe {@code QuickSortMediana3Attendance} realiza a ordenação de dados em
+ * arquivos CSV usando o algoritmo de ordenação Quicksort com a estratégia de pivô Mediana de 3 e ArrayList.
  * Ela é projetada para criar três casos de ordenação (melhor, médio e pior) e
  * medir o tempo de execução.
  * Os resultados ordenados são escritos nos arquivos de saída correspondentes.
@@ -22,7 +25,6 @@ public class QuickSortMediana3Attendance {
     private String outputMedio = path + "matches_t2_attendance_quickSortMediana3_medioCaso.csv";
     private String outputMelhor = path + "matches_t2_attendance_quickSortMediana3_melhorCaso.csv";
     private String outputPior = path + "matches_t2_attendance_quickSortMediana3_piorCaso.csv";
-    private int attendanceIndex = 6;
 
     /**
      * Cria uma nova instância de {@code QuickSortMediana3Attendance} com o arquivo de
@@ -42,8 +44,8 @@ public class QuickSortMediana3Attendance {
         criarCasoMelhor();
         criarCasoMedio();
         criarCasoPior();
-        
-        System.out.println("Ordenando utilizando o algoritmo Quick Sort com mediana de 3...");
+
+        System.out.println("Ordenando utilizando o algoritmo Quicksort com Mediana de 3...");
 
         ordenarEImprimirTempo(outputMelhor);
 
@@ -63,23 +65,24 @@ public class QuickSortMediana3Attendance {
 
     /**
      * Cria o caso de ordenação melhor ordenando o arquivo de entrada de forma
-     * crescente usando o algoritmo QuickSort com mediana de três.
+     * crescente usando o algoritmo Quicksort com Mediana de 3.
      */
     private void criarCasoMelhor() {
-        String[][] data = carregarArquivoEmArray(inputFile);
-        quickSort(data, attendanceIndex, 0, data.length - 1);
-        escreverDados(data, outputMelhor);
+        List<String[]> data = carregarArquivoEmLista(inputFile);
+        quickSortMediana3(data, 6, 0, data.size() - 1); // 6 é o índice da coluna "attendance"
+        escreverDados(data, outputMelhor, true);
+
     }
 
     /**
      * Cria o caso de ordenação pior ordenando o arquivo de entrada de forma
-     * decrescente usando o algoritmo QuickSort com mediana de três.
+     * decrescente usando o algoritmo Quicksort com Mediana de 3.
      */
     private void criarCasoPior() {
-        String[][] data = carregarArquivoEmArray(inputFile);
-        quickSort(data, attendanceIndex, 0, data.length - 1);
-        inverterDados(data);
-        escreverDados(data, outputPior);
+        List<String[]> data = carregarArquivoEmLista(inputFile);
+        quickSortMediana3(data, 6, 0, data.size() - 1); // 6 é o índice da coluna "attendance"
+        Collections.reverse(data);
+        escreverDados(data, outputPior, true);
     }
 
     /**
@@ -101,38 +104,48 @@ public class QuickSortMediana3Attendance {
     }
 
     /**
-     * Carrega os dados de um arquivo CSV em um array bidimensional.
+     * Carrega os dados de um arquivo CSV em uma lista de arrays de strings, ignorando a primeira linha (cabeçalho).
      *
      * @param file O arquivo CSV a ser carregado.
-     * @return Um array bidimensional contendo os dados do arquivo.
+     * @return Uma lista de arrays de strings contendo os dados do arquivo.
      */
-    private String[][] carregarArquivoEmArray(String file) {
-        String[][] data;
+    private List<String[]> carregarArquivoEmLista(String file) {
+        List<String[]> data = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            data = br.lines().skip(1).map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
-                    .toArray(String[][]::new);
+            String line;
+            boolean firstLine = true; // Flag para indicar a primeira linha (cabeçalho)
+            while ((line = br.readLine()) != null) {
+                if (firstLine) {
+                    firstLine = false;
+                    continue; // Ignora a primeira linha (cabeçalho)
+                }
+                String[] values = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+                data.add(values);
+            }
         } catch (IOException e) {
             e.printStackTrace();
-            data = new String[0][];
         }
         return data;
     }
 
     /**
-     * Escreve os dados de um array bidimensional em um arquivo CSV.
+     * Escreve os dados de uma lista de arrays de strings em um arquivo CSV.
      *
-     * @param data       O array bidimensional contendo os dados a serem escritos.
+     * @param data       A lista de arrays de strings contendo os dados a serem escritos.
      * @param outputFile O arquivo CSV de saída.
+     * @param writeHeader Um flag que indica se o cabeçalho deve ser escrito.
      */
-    private void escreverDados(String[][] data, String outputFile) {
+    private void escreverDados(List<String[]> data, String outputFile, boolean writeHeader) {
         try (FileWriter writer = new FileWriter(outputFile)) {
-            // Escreva o cabeçalho
-            writer.write(
-                    "id,home,away,date,year,time (utc),attendance,venue,league,home_score,away_score,home_goal_scorers,away_goal_scorers,full_date\n");
+            // Escreva o cabeçalho apenas se o flag writeHeader for true
+            if (writeHeader) {
+                writer.write(
+                        "id,home,away,date,year,time (utc),attendance,venue,league,home_score,away_score,home_goal_scorers,away_goal_scorers,full_date\n");
+            }
 
             // Escreva os dados
-            for (int i = 0; i < data.length; i++) {
-                writer.write(String.join(",", data[i]) + "\n");
+            for (String[] values : data) {
+                writer.write(String.join(",", values) + "\n");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -140,115 +153,61 @@ public class QuickSortMediana3Attendance {
     }
 
     /**
-     * Inverte a ordem dos dados em um array bidimensional.
+     * Realiza a ordenação usando o algoritmo Quicksort com a estratégia de pivô Mediana de 3.
      *
-     * @param data O array bidimensional a ser invertido.
+     * @param data      A lista de arrays de strings contendo os dados a serem ordenados.
+     * @param columnIndex O índice da coluna pela qual a ordenação será feita.
+     * @param left      O índice do elemento mais à esquerda.
+     * @param right     O índice do elemento mais à direita.
      */
-    private void inverterDados(String[][] data) {
-        for (int i = 0; i < data.length / 2; i++) {
-            String[] temp = data[i];
-            data[i] = data[data.length - i - 1];
-            data[data.length - i - 1] = temp;
+    private void quickSortMediana3(List<String[]> data, int columnIndex, int left, int right) {
+        if (left < right) {
+            int pivotIndex = partitionMediana3(data, columnIndex, left, right);
+
+            // Recursivamente ordena as duas partições
+            quickSortMediana3(data, columnIndex, left, pivotIndex - 1);
+            quickSortMediana3(data, columnIndex, pivotIndex + 1, right);
         }
     }
 
     /**
-     * Realiza a ordenação e mede o tempo de execução usando o algoritmo QuickSort com mediana de três.
-     * O tempo de execução é impresso no console.
+     * Particiona o array usando a estratégia de pivô Mediana de 3.
      *
-     * @param fileToOrder O arquivo a ser ordenado.
+     * @param data      A lista de arrays de strings contendo os dados a serem ordenados.
+     * @param columnIndex O índice da coluna pela qual a ordenação será feita.
+     * @param left      O índice do elemento mais à esquerda.
+     * @param right     O índice do elemento mais à direita.
+     * @return O índice do pivô após a partição.
      */
-    private void ordenarEImprimirTempo(String fileToOrder) {
-        String[][] data = carregarArquivoEmArray(fileToOrder);
+    private int partitionMediana3(List<String[]> data, int columnIndex, int left, int right) {
+        int mid = (left + right) / 2;
+        int leftValue = parseToInt(data.get(left)[columnIndex]);
+        int midValue = parseToInt(data.get(mid)[columnIndex]);
+        int rightValue = parseToInt(data.get(right)[columnIndex]);
 
-        long startTime = System.currentTimeMillis();
-        quickSort(data, attendanceIndex, 0, data.length - 1);
-        long endTime = System.currentTimeMillis();
-
-        System.out.println("Tempo de execução para " + fileToOrder + ": " + (endTime - startTime) + " ms");
-        imprimirConsumoMemoria(); // Imprimir consumo de memória após a ordenação
-
-    }
-
-    /**
-     * Realiza a ordenação de um subarray usando o algoritmo QuickSort com mediana de três.
-     *
-     * @param data       O array bidimensional contendo os dados a serem ordenados.
-     * @param columnIndex O índice da coluna pela qual os dados serão ordenados.
-     * @param low        O índice de início do subarray.
-     * @param high       O índice de fim do subarray.
-     */
-    private void quickSort(String[][] data, int columnIndex, int low, int high) {
-        if (low < high) {
-            int pi = partition(data, columnIndex, low, high);
-            quickSort(data, columnIndex, low, pi - 1);
-            quickSort(data, columnIndex, pi + 1, high);
+        // Encontra o valor mediano entre leftValue, midValue e rightValue
+        int pivotValue;
+        if ((leftValue <= midValue && midValue <= rightValue) || (rightValue <= midValue && midValue <= leftValue)) {
+            pivotValue = midValue;
+            Collections.swap(data, mid, right);
+        } else if ((midValue <= leftValue && leftValue <= rightValue) || (rightValue <= leftValue && leftValue <= midValue)) {
+            pivotValue = leftValue;
+        } else {
+            pivotValue = rightValue;
+            Collections.swap(data, right, mid);
         }
-    }
 
-    /**
-     * Método de partição usado pelo algoritmo QuickSort com mediana de três.
-     *
-     * @param data       O array bidimensional contendo os dados a serem particionados.
-     * @param columnIndex O índice da coluna pela qual os dados serão ordenados.
-     * @param low        O índice de início do subarray.
-     * @param high       O índice de fim do subarray.
-     * @return O índice de partição.
-     */
-    private int partition(String[][] data, int columnIndex, int low, int high) {
-        // Escolha o pivô como a mediana entre low, middle e high
-        int middle = (low + high) / 2;
-        int pivotValue = medianOfThree(parseToInt(data[low][columnIndex]), 
-                                       parseToInt(data[middle][columnIndex]), 
-                                       parseToInt(data[high][columnIndex]));
-
-        int pivotIndex = (pivotValue == parseToInt(data[low][columnIndex])) ? low : 
-                         (pivotValue == parseToInt(data[middle][columnIndex])) ? middle : high;
-
-        swap(data, pivotIndex, high);
-
-        int pivot = parseToInt(data[high][columnIndex]);
-        int i = (low - 1);
-        for (int j = low; j < high; j++) {
-            if (parseToInt(data[j][columnIndex]) < pivot) {
+        // Particiona o array
+        int i = left - 1;
+        for (int j = left; j < right; j++) {
+            if (parseToInt(data.get(j)[columnIndex]) <= pivotValue) {
                 i++;
-                swap(data, i, j);
+                Collections.swap(data, i, j);
             }
         }
-        swap(data, i + 1, high);
 
+        Collections.swap(data, i + 1, right);
         return i + 1;
-    }
-
-    /**
-     * Troca dois elementos em um array bidimensional.
-     *
-     * @param data O array bidimensional.
-     * @param i    O índice do primeiro elemento.
-     * @param j    O índice do segundo elemento.
-     */
-    private void swap(String[][] data, int i, int j) {
-        String[] temp = data[i];
-        data[i] = data[j];
-        data[j] = temp;
-    }
-
-    /**
-     * Retorna a mediana entre três valores.
-     *
-     * @param a O primeiro valor.
-     * @param b O segundo valor.
-     * @param c O terceiro valor.
-     * @return A mediana entre a, b e c.
-     */
-    private int medianOfThree(int a, int b, int c) {
-        if ((a > b) == (a < c)) {
-            return a;
-        } else if ((b > a) == (b < c)) {
-            return b;
-        } else {
-            return c;
-        }
     }
 
     /**
@@ -259,7 +218,7 @@ public class QuickSortMediana3Attendance {
      *
      * @param value A string a ser convertida em um número inteiro.
      * @return O valor inteiro correspondente à string ou 0 se a string não for
-     *         numérica.
+     * numérica.
      */
     private int parseToInt(String value) {
         value = value.replace("\"", "").replace(",", "");
@@ -275,7 +234,7 @@ public class QuickSortMediana3Attendance {
      *
      * @param str A string a ser verificada.
      * @return {@code true} se a string for um número inteiro válido, caso contrário
-     *         {@code false}.
+     * {@code false}.
      */
     private boolean isNumeric(String str) {
         try {
@@ -286,6 +245,9 @@ public class QuickSortMediana3Attendance {
         }
     }
 
+    /**
+     * Imprime o consumo de memória atual.
+     */
     private void imprimirConsumoMemoria() {
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heapMemoryUsage = memoryBean.getHeapMemoryUsage();
@@ -293,5 +255,22 @@ public class QuickSortMediana3Attendance {
         long usedMemory = heapMemoryUsage.getUsed();
 
         System.out.println("Consumo de memória: " + usedMemory + " bytes");
+    }
+
+    /**
+     * Realiza a ordenação e mede o tempo de execução usando o algoritmo Quicksort com Mediana de 3.
+     * O tempo de execução é impresso no console.
+     *
+     * @param fileToOrder O arquivo a ser ordenado.
+     */
+    private void ordenarEImprimirTempo(String fileToOrder) {
+        List<String[]> data = carregarArquivoEmLista(fileToOrder);
+
+        long startTime = System.currentTimeMillis();
+        quickSortMediana3(data, 6, 0, data.size() - 1); // 6 é o índice da coluna "attendance"
+        long endTime = System.currentTimeMillis();
+
+        System.out.println("Tempo de execução para " + fileToOrder + ": " + (endTime - startTime) + " ms");
+        imprimirConsumoMemoria(); // Imprimir consumo de memória após a ordenação
     }
 }

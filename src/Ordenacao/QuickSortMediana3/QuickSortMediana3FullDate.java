@@ -1,26 +1,23 @@
 package Ordenacao.QuickSortMediana3;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 /**
  * A classe {@code QuickSortMediana3FullDate} realiza a ordenação de dados em arquivos
- * CSV usando o algoritmo de ordenação QuickSort com mediana de três.
- * Ela é projetada para criar três casos de ordenação (melhor, médio e pior) e
- * medir o tempo de execução.
- * Os resultados ordenados são escritos nos arquivos de saída correspondentes.
+ * CSV usando o algoritmo de ordenação QuickSort com mediana de 3. Ela oferece
+ * três cenários de ordenação (melhor, médio e pior caso) e mede o tempo de
+ * execução para cada cenário.
  */
 public class QuickSortMediana3FullDate {
-
     private String inputFile;
     private String path = "src/OrdenacaoResultados/QuickSortMediana3/";
     private String outputMedio = path + "matches_t2_full_date_quickSortMediana3_medioCaso.csv";
@@ -30,66 +27,62 @@ public class QuickSortMediana3FullDate {
     private SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 
     /**
-     * Construtor da classe QuickSortMediana3FullDate.
+     * Construtor que inicializa a classe com o arquivo de entrada fornecido.
      *
-     * @param inputFile O caminho do arquivo de entrada que contém os dados a serem
-     *                  ordenados.
+     * @param inputFile O arquivo de entrada contendo os dados a serem ordenados.
      */
     public QuickSortMediana3FullDate(String inputFile) {
         this.inputFile = inputFile;
     }
 
     /**
-     * Ordena os dados nos cenários de melhor, médio e pior caso e imprime o tempo
-     * de execução.
+     * Realiza a ordenação dos dados nos cenários de melhor, médio e pior caso e imprime os tempos de execução.
      */
     public void ordenar() {
         criarCasoMelhor();
         criarCasoMedio();
         criarCasoPior();
 
-        System.out.println("Ordenando utilizando o algoritmo Quick Sort com mediana de 3...");
+        System.out.println("Ordenando utilizando o algoritmo QuickSort com mediana de 3...");
 
         ordenarEImprimirTempo(outputMelhor);
-
         ordenarEImprimirTempo(outputMedio);
-
         ordenarEImprimirTempo(outputPior);
         System.out.println("\nOrdenação concluída com sucesso!");
     }
 
     /**
-     * Cria o cenário de caso médio copiando o arquivo de entrada para o arquivo de
-     * saída.
+     * Cria o cenário de ordenação médio copiando o conteúdo do arquivo de entrada para o arquivo de saída.
      */
     private void criarCasoMedio() {
         copiarArquivo(inputFile, outputMedio);
     }
 
     /**
-     * Cria o cenário de melhor caso ordenando os dados em ordem crescente.
+     * Cria o cenário de ordenação de melhor caso ordenando o arquivo de entrada usando o algoritmo QuickSort com mediana de 3.
      */
     private void criarCasoMelhor() {
-        String[][] data = carregarArquivoEmArray(inputFile);
-        quickSort(data, 0, data.length - 1, fullDateIndex);
+        List<String[]> data = carregarArquivoEmLista(inputFile);
+        quickSort(data, fullDateIndex, 0, data.size() - 1);
         escreverDados(data, outputMelhor);
     }
 
     /**
-     * Cria o cenário de pior caso ordenando os dados em ordem decrescente.
+     * Cria o cenário de ordenação de pior caso ordenando o arquivo de entrada usando o algoritmo QuickSort com mediana de 3
+     * e depois invertendo a ordem dos dados.
      */
     private void criarCasoPior() {
-        String[][] data = carregarArquivoEmArray(inputFile);
-        quickSort(data, 0, data.length - 1, fullDateIndex);
-        inverterDados(data);
+        List<String[]> data = carregarArquivoEmLista(inputFile);
+        quickSort(data, fullDateIndex, 0, data.size() - 1);
+        Collections.reverse(data);
         escreverDados(data, outputPior);
     }
 
     /**
      * Copia um arquivo de origem para um arquivo de destino.
      *
-     * @param origem  O caminho do arquivo de origem.
-     * @param destino O caminho do arquivo de destino.
+     * @param origem  O arquivo de origem a ser copiado.
+     * @param destino O arquivo de destino onde o conteúdo será copiado.
      */
     private void copiarArquivo(String origem, String destino) {
         try (BufferedReader br = new BufferedReader(new FileReader(origem));
@@ -105,30 +98,33 @@ public class QuickSortMediana3FullDate {
     }
 
     /**
-     * Carrega os dados de um arquivo CSV em uma matriz bidimensional.
+     * Carrega os dados de um arquivo CSV em uma lista de arrays de strings.
      *
-     * @param file O caminho do arquivo CSV a ser carregado.
-     * @return Uma matriz bidimensional contendo os dados do arquivo CSV.
+     * @param file O arquivo CSV a ser carregado.
+     * @return Uma lista de arrays de strings contendo os dados do arquivo.
      */
-    private String[][] carregarArquivoEmArray(String file) {
-        String[][] data;
+    private List<String[]> carregarArquivoEmLista(String file) {
+        List<String[]> data = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            data = br.lines().skip(1).map(line -> line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1))
-                    .toArray(String[][]::new);
+            br.readLine(); // Ignorar o cabeçalho
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+                data.add(values);
+            }
         } catch (IOException e) {
             e.printStackTrace();
-            data = new String[0][];
         }
         return data;
     }
 
     /**
-     * Escreve os dados de uma matriz bidimensional em um arquivo CSV.
+     * Escreve os dados de uma lista de arrays de strings em um arquivo CSV.
      *
-     * @param data       A matriz bidimensional contendo os dados a serem escritos.
-     * @param outputFile O caminho do arquivo CSV de saída.
+     * @param data       A lista de arrays de strings contendo os dados a serem escritos.
+     * @param outputFile O arquivo onde os dados serão escritos.
      */
-    private void escreverDados(String[][] data, String outputFile) {
+    private void escreverDados(List<String[]> data, String outputFile) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
             // Escreva o cabeçalho
             writer.write(
@@ -136,8 +132,8 @@ public class QuickSortMediana3FullDate {
             writer.newLine();
 
             // Escreva os dados
-            for (int i = 0; i < data.length; i++) {
-                writer.write(String.join(",", data[i]));
+            for (String[] values : data) {
+                writer.write(String.join(",", values));
                 writer.newLine();
             }
         } catch (IOException e) {
@@ -146,147 +142,112 @@ public class QuickSortMediana3FullDate {
     }
 
     /**
-     * Inverte a ordem dos dados em uma matriz bidimensional.
+     * Ordena os dados no arquivo especificado usando o algoritmo QuickSort com mediana de 3 e imprime o tempo de execução.
      *
-     * @param data A matriz bidimensional a ser invertida.
-     */
-    private void inverterDados(String[][] data) {
-        for (int i = 0; i < data.length / 2; i++) {
-            String[] temp = data[i];
-            data[i] = data[data.length - i - 1];
-            data[data.length - i - 1] = temp;
-        }
-    }
-
-    /**
-     * Ordena os dados contidos no arquivo especificado e imprime o tempo de
-     * execução em milissegundos.
-     *
-     * @param fileToOrder O caminho do arquivo contendo os dados a serem ordenados.
+     * @param fileToOrder O arquivo a ser ordenado.
      */
     private void ordenarEImprimirTempo(String fileToOrder) {
-        String[][] data = carregarArquivoEmArray(fileToOrder);
+        List<String[]> data = carregarArquivoEmLista(fileToOrder);
 
         long startTime = System.currentTimeMillis();
-        quickSort(data, 0, data.length - 1, fullDateIndex);
+        quickSort(data, fullDateIndex, 0, data.size() - 1);
         long endTime = System.currentTimeMillis();
 
         System.out.println("Tempo de execução para " + fileToOrder + ": " + (endTime - startTime) + " ms");
-        imprimirConsumoMemoria(); // Imprimir consumo de memória após a ordenação
-
+        imprimirConsumoMemoria();
     }
 
     /**
-     * Ordena os dados em uma matriz bidimensional usando o algoritmo QuickSort com mediana de três.
+     * Utiliza o algoritmo QuickSort com escolha da mediana de 3 para ordenar uma subparte da lista de arrays de strings
+     * com base no índice da coluna fornecida.
      *
-     * @param data        A matriz bidimensional contendo os dados a serem
-     *                    ordenados.
-     * @param low         O índice baixo inicial para a ordenação.
-     * @param high        O índice alto inicial para a ordenação.
-     * @param columnIndex O índice da coluna de datas completas (full_date) nos
-     *                    dados.
+     * @param data       A lista de arrays de strings a ser ordenada.
+     * @param columnIndex O índice da coluna pela qual os dados serão ordenados.
+     * @param left       O índice inicial da subparte a ser ordenada.
+     * @param right      O índice final da subparte a ser ordenada.
      */
-    private void quickSort(String[][] data, int low, int high, int columnIndex) {
-        if (low < high) {
-            int pi = partition(data, low, high, columnIndex);
-            quickSort(data, low, pi - 1, columnIndex);
-            quickSort(data, pi + 1, high, columnIndex);
+    private void quickSort(List<String[]> data, int columnIndex, int left, int right) {
+        if (left < right) {
+            int pivotIndex = partition(data, columnIndex, left, right);
+            quickSort(data, columnIndex, left, pivotIndex - 1);
+            quickSort(data, columnIndex, pivotIndex + 1, right);
         }
     }
 
     /**
-     * Particiona os dados em uma matriz bidimensional para a ordenação rápida.
+     * Realiza a partição dos dados para o algoritmo QuickSort com mediana de 3.
      *
-     * @param data        A matriz bidimensional contendo os dados a serem particionados.
-     * @param low         O índice baixo inicial para a particionamento.
-     * @param high        O índice alto inicial para a particionamento.
-     * @param columnIndex O índice da coluna de datas completas (full_date) nos
-     *                    dados.
-     * @return O índice da posição de partição.
+     * @param data       A lista de arrays de strings a serem particionados.
+     * @param columnIndex O índice da coluna pela qual os dados serão ordenados.
+     * @param left       O índice inicial da subparte a ser particionada.
+     * @param right      O índice final da subparte a ser particionada.
+     * @return O índice do pivô após a partição.
      */
-    private int partition(String[][] data, int low, int high, int columnIndex) {
-        int middle = (low + high) / 2;
-        String pivotValue = medianOfThree(data[low][columnIndex], data[middle][columnIndex], data[high][columnIndex]);
-        int pivotIndex = (pivotValue.equals(data[low][columnIndex])) ? low :
-                         (pivotValue.equals(data[middle][columnIndex])) ? middle : high;
-        swap(data, pivotIndex, high);
+    private int partition(List<String[]> data, int columnIndex, int left, int right) {
+        int mid = left + (right - left) / 2;
+        String leftDate = data.get(left)[columnIndex].replace("\"", "").trim();
+        String midDate = data.get(mid)[columnIndex].replace("\"", "").trim();
+        String rightDate = data.get(right)[columnIndex].replace("\"", "").trim();
 
-        String pivot = data[high][columnIndex];
-        int i = (low - 1);
-        for (int j = low; j < high; j++) {
-            if (isDateLess(data[j][columnIndex], pivot)) {
+        String pivotDate;
+
+        if (compareDates(leftDate, midDate) <= 0 && compareDates(midDate, rightDate) <= 0) {
+            pivotDate = midDate;
+            swap(data, mid, right);
+        } else if (compareDates(midDate, leftDate) <= 0 && compareDates(leftDate, rightDate) <= 0) {
+            pivotDate = leftDate;
+        } else {
+            pivotDate = rightDate;
+            swap(data, left, right);
+        }
+
+        int i = left - 1;
+
+        for (int j = left; j <= right - 1; j++) {
+            String currentDate = data.get(j)[columnIndex].replace("\"", "").trim();
+            if (compareDates(currentDate, pivotDate) <= 0) {
                 i++;
                 swap(data, i, j);
             }
         }
-        swap(data, i + 1, high);
+
+        swap(data, i + 1, right);
         return i + 1;
     }
 
     /**
-     * Retorna a mediana entre três datas.
-     *
-     * @param date1 A primeira data.
-     * @param date2 A segunda data.
-     * @param date3 A terceira data.
-     * @return A mediana entre date1, date2 e date3.
-     */
-    private String medianOfThree(String date1, String date2, String date3) {
-        date1 = fixDateFormat(date1.replace("\"", ""));
-        date2 = fixDateFormat(date2.replace("\"", ""));
-        date3 = fixDateFormat(date3.replace("\"", ""));
-    
-        Date d1, d2, d3;
-    
-        try {
-            d1 = sdf.parse(date1);
-            d2 = sdf.parse(date2);
-            d3 = sdf.parse(date3);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return date1;  // Retorne a primeira data como padrão em caso de erro.
-        }
-    
-        if (d1.compareTo(d2) <= 0 && d1.compareTo(d3) >= 0 || d1.compareTo(d2) >= 0 && d1.compareTo(d3) <= 0) {
-            return date1;
-        } else if (d2.compareTo(d1) <= 0 && d2.compareTo(d3) >= 0 || d2.compareTo(d1) >= 0 && d2.compareTo(d3) <= 0) {
-            return date2;
-        } else {
-            return date3;
-        }
-    }
-
-    private void swap(String[][] data, int i, int j) {
-        String[] temp = data[i];
-        data[i] = data[j];
-        data[j] = temp;
-    }
-
-    private String fixDateFormat(String date) {
-        if (date.matches("\\d{8}")) {
-            return date.substring(0, 2) + "/" + date.substring(2, 4) + "/" + date.substring(4);
-        }
-        return date;
-    }
-    
-    /**
-     * Verifica se uma data1 é menor do que uma date2.
+     * Compara duas datas no formato "dd/MM/yyyy".
      *
      * @param date1 A primeira data a ser comparada.
      * @param date2 A segunda data a ser comparada.
-     * @return true se a date1 for menor que a date2, caso contrário, false.
+     * @return Um valor negativo se date1 for anterior a date2, zero se forem iguais
+     *         ou um valor positivo se date1 for posterior a date2.
      */
-    private boolean isDateLess(String date1, String date2) {
+    private int compareDates(String date1, String date2) {
         try {
-            Date d1 = sdf.parse(fixDateFormat(date1.replace("\"", "")));
-            Date d2 = sdf.parse(fixDateFormat(date2.replace("\"", "")));
-            return d1.compareTo(d2) < 0;
+            Date d1 = sdf.parse(date1.replace("\"", ""));
+            Date d2 = sdf.parse(date2.replace("\"", ""));
+            return d1.compareTo(d2);
         } catch (ParseException e) {
             e.printStackTrace();
-            return false;
+            return 0;
         }
     }
 
+    /**
+     * Realiza a troca de elementos em uma lista de arrays de strings.
+     *
+     * @param data A lista de arrays de strings onde a troca será realizada.
+     * @param i    O índice do primeiro elemento a ser trocado.
+     * @param j    O índice do segundo elemento a ser trocado.
+     */
+    private void swap(List<String[]> data, int i, int j) {
+        Collections.swap(data, i, j);
+    }
+
+    /**
+     * Imprime o consumo de memória atual.
+     */
     private void imprimirConsumoMemoria() {
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heapMemoryUsage = memoryBean.getHeapMemoryUsage();
